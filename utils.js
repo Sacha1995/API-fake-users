@@ -1,8 +1,11 @@
+const { getIdFromToken } = require("./mysql/queries");
+const asyncMySQL = require("./mysql/connection");
+
 function genToken() {
   return Math.round(Math.random() * 100000000000000) + "" + Date.now();
 }
 
-function checkToken(req, res, next) {
+async function checkToken(req, res, next) {
   const { token } = req.headers;
 
   if (!token) {
@@ -10,19 +13,20 @@ function checkToken(req, res, next) {
     return;
   }
 
-  const user = req.users.find((user) => {
-    if (user.tokens) {
-      return user.tokens.includes(token);
+  console.log(req.headers.token);
+
+  try {
+    const results = await asyncMySQL(getIdFromToken(req.headers.token));
+
+    if (results.length === 0 || !results) {
+      throw new Error("Token not found");
     }
-  });
 
-  if (!user) {
-    res.status(400).send({ status: 0, reason: "Invalid token" });
-    return;
+    req.authedUserId = results[0].user_id;
+    next();
+  } catch (e) {
+    res.status(400).send({ status: 0, error: e.message });
   }
-
-  req.authedUser = user;
-  next();
 }
 
 module.exports = { genToken, checkToken };
