@@ -200,7 +200,7 @@ module.exports = app;
 //choose what to filter it with
 app.get("/ALL", async (req, res) => {
   try {
-    const results = await asyncMySQL(selectAll);
+    const results = await asyncMySQL(selectAll());
     res.send(results);
   } catch (e) {
     res.status(400).send({
